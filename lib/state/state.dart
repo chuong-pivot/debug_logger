@@ -7,7 +7,8 @@ class DebugLoggerState with _$DebugLoggerState {
   factory DebugLoggerState({
     @Default(true) bool isButtonCollapsed,
     @Default(false) bool isTakingScreenshot,
-    @Default(false) bool isSending,
-    @Default('') String imagePath,
+    @Default(false) bool isHandling,
+    @Default(false) bool isEditingImage,
+    String? imagePath,
   }) = _DebugLoggerState;
 }

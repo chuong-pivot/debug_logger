@@ -9,8 +9,6 @@ environment:
    flutter: ">=2.5.0"
 
 dependencies:
-   firebase_core: ^2.4.0
-   firebase_storage: ^11.0.7
    flutter:
       sdk: flutter
    logger: ^1.1.0
@@ -26,7 +24,6 @@ dependencies:
          url: https://github.com/chuong-pivot/native_screenshot_forked.git
    device_info_plus: ^8.0.0
    path: ^1.8.2
-   firebase_auth: ^4.2.0
 
 dev_dependencies:
    flutter_test:

@@ -43,7 +43,7 @@ class DebugLoggerWrapper extends StatelessWidget {
                                   final debugLoggerState =
                                       ref.watch(debugLoggerProvider);
 
-                                  final debugLogger =
+                                  final debugLoggerNotifier =
                                       ref.read(debugLoggerProvider.notifier);
 
                                   return !debugLoggerState.isTakingScreenshot
@@ -54,8 +54,8 @@ class DebugLoggerWrapper extends StatelessWidget {
                                               : Axis.horizontal,
                                           children: [
                                             GestureDetector(
-                                              onTap: () =>
-                                                  debugLogger.toogleCollapse(
+                                              onTap: () => debugLoggerNotifier
+                                                  .toogleCollapse(
                                                       !debugLoggerState
                                                           .isButtonCollapsed),
                                               child: Container(
@@ -82,8 +82,8 @@ class DebugLoggerWrapper extends StatelessWidget {
                                                 height: 10,
                                               ),
                                               GestureDetector(
-                                                onTap: DebugLogger()
-                                                    .uploadDebugLogsDataToServer,
+                                                onTap: debugLoggerNotifier
+                                                    .handleDebugData,
                                                 child: Container(
                                                   height: 40,
                                                   width: 40,
@@ -104,7 +104,7 @@ class DebugLoggerWrapper extends StatelessWidget {
                                                 height: 10,
                                               ),
                                               GestureDetector(
-                                                onTap: DebugLogger()
+                                                onTap: debugLoggerNotifier
                                                     .takeScreenshot,
                                                 child: Container(
                                                   height: 40,
@@ -121,18 +121,17 @@ class DebugLoggerWrapper extends StatelessWidget {
                                                   ),
                                                 ),
                                               ),
-                                              if (debugLoggerState
-                                                  .imagePath.isNotEmpty) ...[
+                                              if (debugLoggerState.imagePath !=
+                                                  null) ...[
                                                 const SizedBox(
                                                   width: 10,
                                                   height: 10,
                                                 ),
                                                 GestureDetector(
                                                   onTap: () {
-                                                    Navigator.of(context).push(
-                                                        MaterialPageRoute(
-                                                            builder: (context) =>
-                                                                const EditDebugScreenshot()));
+                                                    debugLoggerNotifier
+                                                        .setisEditingImage(
+                                                            true);
                                                   },
                                                   child: Container(
                                                     height: 40,
@@ -168,13 +167,17 @@ class DebugLoggerWrapper extends StatelessWidget {
             ),
             Consumer(
               builder: (context, ref, child) {
-                final debugLoggerState = ref.watch(debugLoggerProvider);
+                final isHandling = ref.watch(
+                    debugLoggerProvider.select((value) => value.isHandling));
 
-                return debugLoggerState.isSending
+                return isHandling
                     ? Positioned.fill(
                         child: Stack(
                           alignment: Alignment.center,
                           children: [
+                            const CircularProgressIndicator(
+                              color: Colors.white,
+                            ),
                             Container(
                               width: 100,
                               height: 100,
@@ -189,12 +192,19 @@ class DebugLoggerWrapper extends StatelessWidget {
                                 style: TextStyle(height: 1.5),
                               ),
                             ),
-                            const CircularProgressIndicator(
-                              color: Colors.white,
-                            ),
                           ],
                         ),
                       )
+                    : Container();
+              },
+            ),
+            Consumer(
+              builder: (context, ref, child) {
+                final isEditing = ref.watch(debugLoggerProvider
+                    .select((value) => value.isEditingImage));
+
+                return isEditing
+                    ? const Positioned.fill(child: EditDebugScreenshot())
                     : Container();
               },
             ),
@@ -214,89 +224,90 @@ class EditDebugScreenshot extends ConsumerStatefulWidget {
 }
 
 class _EditDebugScreenshotState extends ConsumerState<EditDebugScreenshot> {
-  final _imageKey = GlobalKey<ImagePainterState>();
+  GlobalKey<ImagePainterState> _imageKey = GlobalKey<ImagePainterState>();
   bool isSaving = false;
 
   @override
   Widget build(BuildContext context) {
     final debugLoggerState = ref.watch(debugLoggerProvider);
-    final debugLoggerNotifier = ref.read(debugLoggerProvider.notifier);
+    final debugLoggerNofitier = ref.watch(debugLoggerProvider.notifier);
 
     try {
-      return Scaffold(
-        appBar: AppBar(
-          actions: [
-            IconButton(
+      return MaterialApp(
+        home: Scaffold(
+          appBar: AppBar(
+            leading: IconButton(
               onPressed: () async {
-                if (isSaving) {
-                  return;
-                }
-
-                setState(() {
-                  isSaving = true;
-                });
-
-                final newImageBytes =
-                    await _imageKey.currentState?.exportImage();
-
-                if (newImageBytes != null) {
-                  final file = File(debugLoggerState.imagePath);
-
-                  await file.writeAsBytes(newImageBytes);
-
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Saved!'),
-                      duration: Duration(milliseconds: 500),
-                    ),
-                  );
-                } else {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Failed to save image!'),
-                      duration: Duration(milliseconds: 500),
-                    ),
-                  );
-                }
-
-                setState(() {
-                  isSaving = false;
-                });
+                debugLoggerNofitier.setisEditingImage(false);
               },
-              icon: const Icon(Icons.save),
+              icon: const Icon(Icons.arrow_back),
             ),
-          ],
-        ),
-        body: Stack(
-          alignment: Alignment.center,
-          children: [
-            Positioned.fill(
-              child: ImagePainter.memory(
-                File(debugLoggerState.imagePath).readAsBytesSync(),
-                key: _imageKey,
+            actions: [
+              IconButton(
+                onPressed: () async {
+                  if (isSaving || debugLoggerState.imagePath == null) {
+                    return;
+                  }
+
+                  setState(() {
+                    isSaving = true;
+                  });
+
+                  final newImageBytes =
+                      await _imageKey.currentState?.exportImage();
+
+                  if (newImageBytes != null) {
+                    final file = File(debugLoggerState.imagePath!);
+
+                    await file.writeAsBytes(newImageBytes);
+
+                    debugLogger.d('Save success');
+                  } else {
+                    debugLogger.e('Save failed');
+                  }
+
+                  setState(() {
+                    isSaving = false;
+                  });
+                },
+                icon: const Icon(Icons.save),
               ),
-            ),
-            if (isSaving) ...[
-              Positioned.fill(
-                child: Stack(
-                  alignment: Alignment.center,
-                  children: [
-                    Container(
-                      width: 100,
-                      height: 100,
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(8),
-                        color: const Color.fromRGBO(0, 0, 0, 1).withOpacity(.5),
-                      ),
-                    ),
-                    const CircularProgressIndicator(
-                      color: Colors.white,
-                    ),
-                  ],
+            ],
+          ),
+          body: Stack(
+            alignment: Alignment.center,
+            children: [
+              if (debugLoggerState.imagePath != null) ...[
+                Positioned.fill(
+                  child: ImagePainter.memory(
+                    File(debugLoggerState.imagePath!).readAsBytesSync(),
+                    key: _imageKey,
+                  ),
                 ),
-              ),
-            ]
-          ],
+              ],
+              if (isSaving) ...[
+                Positioned.fill(
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      Container(
+                        width: 100,
+                        height: 100,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(8),
+                          color:
+                              const Color.fromRGBO(0, 0, 0, 1).withOpacity(.5),
+                        ),
+                      ),
+                      const CircularProgressIndicator(
+                        color: Colors.white,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ],
+          ),
         ),
       );
     } catch (err) {

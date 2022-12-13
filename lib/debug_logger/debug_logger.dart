@@ -2,8 +2,6 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:device_info_plus/device_info_plus.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/foundation.dart';
 import 'package:logger/logger.dart';
 import 'package:native_screenshot/native_screenshot.dart';
@@ -41,7 +39,7 @@ class DebugLogger extends _$DebugLogger {
   }
 
   static const isDebugLoggerEnabled = EnviromentVariables.debugLoggerEnabled;
-  static Function(DebugLoggerResult result)? onDoneUpload;
+  static Function(DebugLoggerResult result)? onDoneHandling;
 
   static String logData = '';
 
@@ -56,18 +54,15 @@ class DebugLogger extends _$DebugLogger {
     output: CustomLogOutput(),
   );
 
-  final storageRef = FirebaseStorage.instance.ref();
-  final _auth = FirebaseAuth.instance;
-
   void toogleCollapse(bool isCollapse) {
     state = state.copyWith(
       isButtonCollapsed: isCollapse,
     );
   }
 
-  void setIsSending(bool isSending) {
+  void setIsHandling(bool isHandling) {
     state = state.copyWith(
-      isSending: isSending,
+      isHandling: isHandling,
     );
   }
 
@@ -77,7 +72,13 @@ class DebugLogger extends _$DebugLogger {
     );
   }
 
-  void setImagePath(String path) {
+  void setisEditingImage(bool isEditing) {
+    state = state.copyWith(
+      isEditingImage: isEditing,
+    );
+  }
+
+  void setImagePath(String? path) {
     state = state.copyWith(
       imagePath: path,
     );
@@ -85,6 +86,8 @@ class DebugLogger extends _$DebugLogger {
 
   Future<void> takeScreenshot() async {
     setIsTakingScrenshot(true);
+
+    await Future.delayed(const Duration(milliseconds: 200));
 
     debugLogger.d('Taking screenshot...');
 
@@ -113,28 +116,23 @@ class DebugLogger extends _$DebugLogger {
       debugLogger.e('Take screenshot error: $err');
     }
 
-    setIsTakingScrenshot(false);
+    Future.delayed(const Duration(milliseconds: 200), () {
+      setIsTakingScrenshot(false);
+    });
   }
 
-  Future<void> uploadDebugLogsDataToServer() async {
-    if (state.isSending || state.isTakingScreenshot) {
+  Future<void> handleDebugData() async {
+    if (state.isHandling || state.isTakingScreenshot) {
       return;
     }
 
-    if (state.imagePath.isNotEmpty) {
+    if (state.imagePath == null) {
       await takeScreenshot();
     }
 
-    setIsSending(true);
+    setIsHandling(true);
 
     try {
-      debugLogger.d('Adding user info...');
-
-      // NOTE: Change base on app state management package
-      final email = _auth.currentUser?.email;
-      logData = 'User Info:\nUser email: ${email ?? 'Guest mode'}\n\n$logData';
-      // END-NOTE
-
       debugLogger.d('Adding device info...');
 
       final androidInfo = await DeviceInfoPlugin().androidInfo;
@@ -145,90 +143,96 @@ class DebugLogger extends _$DebugLogger {
       debugLogger.d('Write log data to file....');
 
       final directory = await getApplicationDocumentsDirectory();
+
       final logFileName =
           'travelo_debug_log_${DateTime.now().toIso8601String()}.log';
-      final logFile = File(join(directory.path, logFileName));
+
+      final filePath = join(directory.path, FolderPaths.debugLog, logFileName);
+
+      await File(filePath).create(recursive: true);
+
+      final logFile = File(filePath);
 
       await logFile.writeAsString(logData, flush: true);
 
       debugLogger.d('Log file path = ${logFile.path}');
 
-      String? logFileDownloadURL;
+      // String? logFileDownloadURL;
 
-      try {
-        final debugLogsRef = await uploadFileToServer(
-          file: logFile,
-          path: 'debug_logs/$logFileName',
-        );
+      // try {
+      //   final debugLogsRef = await uploadFileToServer(
+      //     file: logFile,
+      //     path: 'debug_logs/$logFileName',
+      //   );
 
-        if (debugLogsRef == null) {
-          debugLogger.d("Can't upload file to server.");
-        }
+      //   if (debugLogsRef == null) {
+      //     debugLogger.d("Can't upload file to server.");
+      //   }
 
-        await debugLogsRef?.putFile(logFile);
+      //   await debugLogsRef?.putFile(logFile);
 
-        logFileDownloadURL = await debugLogsRef?.getDownloadURL();
-      } catch (err) {
-        debugLogger.e(err);
-      }
+      //   logFileDownloadURL = await debugLogsRef?.getDownloadURL();
+      // } catch (err) {
+      //   debugLogger.e(err);
+      // }
 
-      debugLogger.d('Log file download URL: $logFileDownloadURL');
+      // debugLogger.d('Log file download URL: $logFileDownloadURL');
 
-      String? screenshotDownloadUrl;
+      // String? screenshotDownloadUrl;
 
-      if (state.imagePath.isNotEmpty) {
-        final fileName =
-            'travelo_debug_screenshot_${DateTime.now().toIso8601String()}.png';
+      // if (state.imagePath.isNotEmpty) {
+      //   final fileName =
+      //       'travelo_debug_screenshot_${DateTime.now().toIso8601String()}.png';
 
-        final screenshotFile = File(state.imagePath);
+      //   final screenshotFile = File(state.imagePath);
 
-        debugLogger.d('Upload image file name: $fileName');
+      //   debugLogger.d('Upload image file name: $fileName');
 
-        final debugScreenshotRef = await uploadFileToServer(
-          file: screenshotFile,
-          path: 'debug_screenshots/$fileName',
-        );
+      //   final debugScreenshotRef = await uploadFileToServer(
+      //     file: screenshotFile,
+      //     path: 'debug_screenshots/$fileName',
+      //   );
 
-        try {
-          await debugScreenshotRef?.putFile(screenshotFile);
-        } catch (err) {
-          debugLogger.d(err);
-        }
+      //   try {
+      //     await debugScreenshotRef?.putFile(screenshotFile);
+      //   } catch (err) {
+      //     debugLogger.d(err);
+      //   }
 
-        screenshotDownloadUrl = await debugScreenshotRef?.getDownloadURL();
+      //   screenshotDownloadUrl = await debugScreenshotRef?.getDownloadURL();
 
-        debugLogger.d('Screenshot download URL:  $screenshotDownloadUrl');
-      }
+      //   debugLogger.d('Screenshot download URL:  $screenshotDownloadUrl');
+      // }
 
-      onDoneUpload?.call(DebugLoggerResult(
-        logFileDownloadURL: logFileDownloadURL,
-        screenshotDownloadUrl: screenshotDownloadUrl,
+      onDoneHandling?.call(DebugLoggerResult(
+        debugLogFilePath: logFile.path,
+        imageFilePath: state.imagePath,
       ));
     } catch (err) {
       debugLogger.e(err);
     }
 
-    setIsSending(false);
+    setIsHandling(false);
   }
 
-  Future<Reference?> uploadFileToServer({
-    required File file,
-    required String path,
-  }) async {
-    try {
-      debugLogger.d('Uploading $path');
+  // Future<Reference?> uploadFileToServer({
+  //   required File file,
+  //   required String path,
+  // }) async {
+  //   try {
+  //     debugLogger.d('Uploading $path');
 
-      final strgRef = storageRef.child(path);
+  //     final strgRef = storageRef.child(path);
 
-      await strgRef.putFile(file);
+  //     await strgRef.putFile(file);
 
-      return strgRef;
-    } catch (err) {
-      debugLogger.e(err);
-    }
+  //     return strgRef;
+  //   } catch (err) {
+  //     debugLogger.e(err);
+  //   }
 
-    return null;
-  }
+  //   return null;
+  // }
 }
 
 class CustomLogFilter extends LogFilter {

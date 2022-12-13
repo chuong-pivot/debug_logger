@@ -18,8 +18,9 @@ final _privateConstructorUsedError = UnsupportedError(
 mixin _$DebugLoggerState {
   bool get isButtonCollapsed => throw _privateConstructorUsedError;
   bool get isTakingScreenshot => throw _privateConstructorUsedError;
-  String get imagePath => throw _privateConstructorUsedError;
-  bool get isSending => throw _privateConstructorUsedError;
+  bool get isHandling => throw _privateConstructorUsedError;
+  bool get isEditingImage => throw _privateConstructorUsedError;
+  String? get imagePath => throw _privateConstructorUsedError;
 
   @JsonKey(ignore: true)
   $DebugLoggerStateCopyWith<DebugLoggerState> get copyWith =>
@@ -35,8 +36,9 @@ abstract class $DebugLoggerStateCopyWith<$Res> {
   $Res call(
       {bool isButtonCollapsed,
       bool isTakingScreenshot,
-      String imagePath,
-      bool isSending});
+      bool isHandling,
+      bool isEditingImage,
+      String? imagePath});
 }
 
 /// @nodoc
@@ -54,8 +56,9 @@ class _$DebugLoggerStateCopyWithImpl<$Res, $Val extends DebugLoggerState>
   $Res call({
     Object? isButtonCollapsed = null,
     Object? isTakingScreenshot = null,
-    Object? imagePath = null,
-    Object? isSending = null,
+    Object? isHandling = null,
+    Object? isEditingImage = null,
+    Object? imagePath = freezed,
   }) {
     return _then(_value.copyWith(
       isButtonCollapsed: null == isButtonCollapsed
@@ -66,14 +69,18 @@ class _$DebugLoggerStateCopyWithImpl<$Res, $Val extends DebugLoggerState>
           ? _value.isTakingScreenshot
           : isTakingScreenshot // ignore: cast_nullable_to_non_nullable
               as bool,
-      imagePath: null == imagePath
+      isHandling: null == isHandling
+          ? _value.isHandling
+          : isHandling // ignore: cast_nullable_to_non_nullable
+              as bool,
+      isEditingImage: null == isEditingImage
+          ? _value.isEditingImage
+          : isEditingImage // ignore: cast_nullable_to_non_nullable
+              as bool,
+      imagePath: freezed == imagePath
           ? _value.imagePath
           : imagePath // ignore: cast_nullable_to_non_nullable
-              as String,
-      isSending: null == isSending
-          ? _value.isSending
-          : isSending // ignore: cast_nullable_to_non_nullable
-              as bool,
+              as String?,
     ) as $Val);
   }
 }
@@ -89,8 +96,9 @@ abstract class _$$_DebugLoggerStateCopyWith<$Res>
   $Res call(
       {bool isButtonCollapsed,
       bool isTakingScreenshot,
-      String imagePath,
-      bool isSending});
+      bool isHandling,
+      bool isEditingImage,
+      String? imagePath});
 }
 
 /// @nodoc
@@ -106,8 +114,9 @@ class __$$_DebugLoggerStateCopyWithImpl<$Res>
   $Res call({
     Object? isButtonCollapsed = null,
     Object? isTakingScreenshot = null,
-    Object? imagePath = null,
-    Object? isSending = null,
+    Object? isHandling = null,
+    Object? isEditingImage = null,
+    Object? imagePath = freezed,
   }) {
     return _then(_$_DebugLoggerState(
       isButtonCollapsed: null == isButtonCollapsed
@@ -118,14 +127,18 @@ class __$$_DebugLoggerStateCopyWithImpl<$Res>
           ? _value.isTakingScreenshot
           : isTakingScreenshot // ignore: cast_nullable_to_non_nullable
               as bool,
-      imagePath: null == imagePath
+      isHandling: null == isHandling
+          ? _value.isHandling
+          : isHandling // ignore: cast_nullable_to_non_nullable
+              as bool,
+      isEditingImage: null == isEditingImage
+          ? _value.isEditingImage
+          : isEditingImage // ignore: cast_nullable_to_non_nullable
+              as bool,
+      imagePath: freezed == imagePath
           ? _value.imagePath
           : imagePath // ignore: cast_nullable_to_non_nullable
-              as String,
-      isSending: null == isSending
-          ? _value.isSending
-          : isSending // ignore: cast_nullable_to_non_nullable
-              as bool,
+              as String?,
     ));
   }
 }
@@ -136,8 +149,9 @@ class _$_DebugLoggerState implements _DebugLoggerState {
   _$_DebugLoggerState(
       {this.isButtonCollapsed = true,
       this.isTakingScreenshot = false,
-      this.imagePath = '',
-      this.isSending = false});
+      this.isHandling = false,
+      this.isEditingImage = false,
+      this.imagePath});
 
   @override
   @JsonKey()
@@ -147,14 +161,16 @@ class _$_DebugLoggerState implements _DebugLoggerState {
   final bool isTakingScreenshot;
   @override
   @JsonKey()
-  final String imagePath;
+  final bool isHandling;
   @override
   @JsonKey()
-  final bool isSending;
+  final bool isEditingImage;
+  @override
+  final String? imagePath;
 
   @override
   String toString() {
-    return 'DebugLoggerState(isButtonCollapsed: $isButtonCollapsed, isTakingScreenshot: $isTakingScreenshot, imagePath: $imagePath, isSending: $isSending)';
+    return 'DebugLoggerState(isButtonCollapsed: $isButtonCollapsed, isTakingScreenshot: $isTakingScreenshot, isHandling: $isHandling, isEditingImage: $isEditingImage, imagePath: $imagePath)';
   }
 
   @override
@@ -166,15 +182,17 @@ class _$_DebugLoggerState implements _DebugLoggerState {
                 other.isButtonCollapsed == isButtonCollapsed) &&
             (identical(other.isTakingScreenshot, isTakingScreenshot) ||
                 other.isTakingScreenshot == isTakingScreenshot) &&
+            (identical(other.isHandling, isHandling) ||
+                other.isHandling == isHandling) &&
+            (identical(other.isEditingImage, isEditingImage) ||
+                other.isEditingImage == isEditingImage) &&
             (identical(other.imagePath, imagePath) ||
-                other.imagePath == imagePath) &&
-            (identical(other.isSending, isSending) ||
-                other.isSending == isSending));
+                other.imagePath == imagePath));
   }
 
   @override
-  int get hashCode => Object.hash(
-      runtimeType, isButtonCollapsed, isTakingScreenshot, imagePath, isSending);
+  int get hashCode => Object.hash(runtimeType, isButtonCollapsed,
+      isTakingScreenshot, isHandling, isEditingImage, imagePath);
 
   @JsonKey(ignore: true)
   @override
@@ -187,17 +205,20 @@ abstract class _DebugLoggerState implements DebugLoggerState {
   factory _DebugLoggerState(
       {final bool isButtonCollapsed,
       final bool isTakingScreenshot,
-      final String imagePath,
-      final bool isSending}) = _$_DebugLoggerState;
+      final bool isHandling,
+      final bool isEditingImage,
+      final String? imagePath}) = _$_DebugLoggerState;
 
   @override
   bool get isButtonCollapsed;
   @override
   bool get isTakingScreenshot;
   @override
-  String get imagePath;
+  bool get isHandling;
   @override
-  bool get isSending;
+  bool get isEditingImage;
+  @override
+  String? get imagePath;
   @override
   @JsonKey(ignore: true)
   _$$_DebugLoggerStateCopyWith<_$_DebugLoggerState> get copyWith =>

@@ -1,9 +1,9 @@
 class DebugLoggerResult {
   DebugLoggerResult({
-    this.logFileDownloadURL,
-    this.screenshotDownloadUrl,
+    this.debugLogFilePath,
+    this.imageFilePath,
   });
 
-  final String? logFileDownloadURL;
-  final String? screenshotDownloadUrl;
+  final String? debugLogFilePath;
+  final String? imageFilePath;
 }

@@ -29,7 +29,7 @@ class _SystemHash {
   }
 }
 
-String $DebugLoggerHash() => r'3221569ecd91888741da48daa15e2e247e6dc011';
+String $DebugLoggerHash() => r'48b298bc99608a37f00b80171966559bfe1fb6a8';
 
 /// See also [DebugLogger].
 final debugLoggerProvider =

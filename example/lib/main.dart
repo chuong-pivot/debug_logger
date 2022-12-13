@@ -5,17 +5,7 @@ import 'package:flutter/material.dart';
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
 
-  FlutterError.onError = (details) {
-    debugLogger.wtf(
-      details.exceptionAsString(),
-      [
-        details,
-        details.stack,
-      ],
-    );
-  };
-
-  DebugLogger.onDoneUpload = (result) {
+  DebugLogger.onDoneHandling = (result) {
     print(result.debugLogFilePath);
     print(result.imageFilePath);
   };
