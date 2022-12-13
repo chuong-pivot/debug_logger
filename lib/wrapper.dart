@@ -220,7 +220,7 @@ class _EditDebugScreenshotState extends ConsumerState<EditDebugScreenshot> {
   @override
   Widget build(BuildContext context) {
     final debugLoggerState = ref.watch(debugLoggerProvider);
-    final debugLogger = ref.read(debugLoggerProvider.notifier);
+    final debugLoggerNotifier = ref.read(debugLoggerProvider.notifier);
 
     try {
       return Scaffold(
@@ -300,7 +300,7 @@ class _EditDebugScreenshotState extends ConsumerState<EditDebugScreenshot> {
         ),
       );
     } catch (err) {
-      DebugLogger.log.e(err);
+      debugLogger.e(err);
     }
 
     return Container();

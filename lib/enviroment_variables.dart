@@ -1,4 +1,4 @@
 class EnviromentVariables {
-  static const debugMode = bool.fromEnvironment('DEBUG_MODE');
-  static const testHelperEnabled = bool.fromEnvironment('TEST_HELPER_ENABLED');
+  static const debugLoggerEnabled =
+      bool.fromEnvironment('DEBUG_LOGGER_ENABLED');
 }

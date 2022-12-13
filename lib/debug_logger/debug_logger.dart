@@ -18,6 +18,8 @@ import '../state/state.dart';
 
 part 'debug_logger.g.dart';
 
+final debugLogger = DebugLogger.log;
+
 @riverpod
 class DebugLogger extends _$DebugLogger {
   @override
@@ -38,7 +40,7 @@ class DebugLogger extends _$DebugLogger {
     logData += '$logs\n';
   }
 
-  static const isDebugLoggerEnabled = EnviromentVariables.testHelperEnabled;
+  static const isDebugLoggerEnabled = EnviromentVariables.debugLoggerEnabled;
   static Function(DebugLoggerResult result)? onDoneUpload;
 
   static String logData = '';
@@ -63,12 +65,28 @@ class DebugLogger extends _$DebugLogger {
     );
   }
 
-  Future<void> takeScreenshot() async {
+  void setIsSending(bool isSending) {
     state = state.copyWith(
-      isTakingScreenshot: true,
+      isSending: isSending,
     );
+  }
 
-    DebugLogger.log.d('Taking screenshot...');
+  void setIsTakingScrenshot(bool isTakingScreenshot) {
+    state = state.copyWith(
+      isTakingScreenshot: isTakingScreenshot,
+    );
+  }
+
+  void setImagePath(String path) {
+    state = state.copyWith(
+      imagePath: path,
+    );
+  }
+
+  Future<void> takeScreenshot() async {
+    setIsTakingScrenshot(true);
+
+    debugLogger.d('Taking screenshot...');
 
     try {
       final dir = await getApplicationDocumentsDirectory();
@@ -84,24 +102,18 @@ class DebugLogger extends _$DebugLogger {
       );
 
       if (screenshotFilePath == null) {
-        DebugLogger.log.d('Take screenshot error: filePath = null');
+        debugLogger.d('Take screenshot error: filePath = null');
         return;
       }
 
-      DebugLogger.log.d('screenshotFilePath = $screenshotFilePath');
+      debugLogger.d('screenshotFilePath = $screenshotFilePath');
 
-      state = state.copyWith(
-        imagePath: screenshotFilePath,
-      );
+      setImagePath(screenshotFilePath);
     } catch (err) {
-      DebugLogger.log.e('Take screenshot error: $err');
+      debugLogger.e('Take screenshot error: $err');
     }
 
-    state = state.copyWith(
-      isTakingScreenshot: false,
-    );
-
-    return;
+    setIsTakingScrenshot(false);
   }
 
   Future<void> uploadDebugLogsDataToServer() async {
@@ -113,26 +125,24 @@ class DebugLogger extends _$DebugLogger {
       await takeScreenshot();
     }
 
-    state = state.copyWith(
-      isSending: true,
-    );
+    setIsSending(true);
 
     try {
-      DebugLogger.log.d('Adding user info...');
+      debugLogger.d('Adding user info...');
 
       // NOTE: Change base on app state management package
       final email = _auth.currentUser?.email;
       logData = 'User Info:\nUser email: ${email ?? 'Guest mode'}\n\n$logData';
       // END-NOTE
 
-      DebugLogger.log.d('Adding device info...');
+      debugLogger.d('Adding device info...');
 
       final androidInfo = await DeviceInfoPlugin().androidInfo;
 
       logData =
           'Device Info:\nDevice: ${androidInfo.device}\nModel: ${androidInfo.model}\nVersion: ${androidInfo.version.sdkInt}\n\n$logData';
 
-      DebugLogger.log.d('Write log data to file....');
+      debugLogger.d('Write log data to file....');
 
       final directory = await getApplicationDocumentsDirectory();
       final logFileName =
@@ -141,7 +151,7 @@ class DebugLogger extends _$DebugLogger {
 
       await logFile.writeAsString(logData, flush: true);
 
-      DebugLogger.log.d('Log file path = ${logFile.path}');
+      debugLogger.d('Log file path = ${logFile.path}');
 
       String? logFileDownloadURL;
 
@@ -152,17 +162,17 @@ class DebugLogger extends _$DebugLogger {
         );
 
         if (debugLogsRef == null) {
-          DebugLogger.log.d("Can't upload file to server.");
+          debugLogger.d("Can't upload file to server.");
         }
 
         await debugLogsRef?.putFile(logFile);
 
         logFileDownloadURL = await debugLogsRef?.getDownloadURL();
       } catch (err) {
-        DebugLogger.log.e(err);
+        debugLogger.e(err);
       }
 
-      DebugLogger.log.d('Log file download URL: $logFileDownloadURL');
+      debugLogger.d('Log file download URL: $logFileDownloadURL');
 
       String? screenshotDownloadUrl;
 
@@ -172,7 +182,7 @@ class DebugLogger extends _$DebugLogger {
 
         final screenshotFile = File(state.imagePath);
 
-        DebugLogger.log.d('Upload image file name: $fileName');
+        debugLogger.d('Upload image file name: $fileName');
 
         final debugScreenshotRef = await uploadFileToServer(
           file: screenshotFile,
@@ -182,12 +192,12 @@ class DebugLogger extends _$DebugLogger {
         try {
           await debugScreenshotRef?.putFile(screenshotFile);
         } catch (err) {
-          DebugLogger.log.d(err);
+          debugLogger.d(err);
         }
 
         screenshotDownloadUrl = await debugScreenshotRef?.getDownloadURL();
 
-        DebugLogger.log.d('Screenshot download URL:  $screenshotDownloadUrl');
+        debugLogger.d('Screenshot download URL:  $screenshotDownloadUrl');
       }
 
       onDoneUpload?.call(DebugLoggerResult(
@@ -195,12 +205,10 @@ class DebugLogger extends _$DebugLogger {
         screenshotDownloadUrl: screenshotDownloadUrl,
       ));
     } catch (err) {
-      DebugLogger.log.e(err);
+      debugLogger.e(err);
     }
 
-    state = state.copyWith(
-      isSending: false,
-    );
+    setIsSending(false);
   }
 
   Future<Reference?> uploadFileToServer({
@@ -208,7 +216,7 @@ class DebugLogger extends _$DebugLogger {
     required String path,
   }) async {
     try {
-      DebugLogger.log.d('Uploading $path');
+      debugLogger.d('Uploading $path');
 
       final strgRef = storageRef.child(path);
 
@@ -216,7 +224,7 @@ class DebugLogger extends _$DebugLogger {
 
       return strgRef;
     } catch (err) {
-      DebugLogger.log.e(err);
+      debugLogger.e(err);
     }
 
     return null;
@@ -228,7 +236,7 @@ class CustomLogFilter extends LogFilter {
    (when testHelperEnabled=true only) */
   @override
   bool shouldLog(LogEvent event) {
-    return kDebugMode || EnviromentVariables.testHelperEnabled;
+    return kDebugMode || EnviromentVariables.debugLoggerEnabled;
   }
 }
 

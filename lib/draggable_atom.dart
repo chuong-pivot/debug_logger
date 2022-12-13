@@ -50,11 +50,11 @@ class _DraggableAtomState extends State<DraggableAtom> {
             maxSimultaneousDrags: 1,
             feedback: widget.child,
             onDragEnd: (details) => updatePosition(details.offset),
-            child: widget.child,
             childWhenDragging: Opacity(
               opacity: widget.hasTrail ? .3 : 0,
               child: widget.child,
             ),
+            child: widget.child,
           ),
         ),
       ],
